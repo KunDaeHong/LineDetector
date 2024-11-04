@@ -47,14 +47,22 @@ namespace CV
             return newTexture;
         }
 
-        public static Texture2D extractSpecificColors(Texture2D target, List<Color> colors)
+        public static Texture2D extractSpecificColors(Texture2D target, List<List<ColorHSV>> colors)
         {
             Texture2D output = new Texture2D(target.width, target.height);
 
-            foreach (var color in colors)
+            for (int w = 0; w < target.width; w++)
             {
-                //각 픽셀별로 구해야 함. 멀티스레드 작동이 필요함.
-                // ColorHSV firstHsv = ColorHSV.rgb2hsv()
+                for (int h = 0; h < target.height; h++)
+                {
+                    Color targetColor = target.GetPixel(w, h); // 0 ~ 1로 정규화 되어 있음.
+                    ColorHSV targetColorHsv = ColorHSV.rgb2hsv(targetColor);
+
+                    foreach (var color in colors)
+                    {
+                        //TODO: 픽셀 hsv범위 셋팅 후 멀티스레드 작성
+                    }
+                }
             }
 
             return output;
