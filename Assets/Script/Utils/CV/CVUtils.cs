@@ -58,9 +58,16 @@ namespace CV
                     Color targetColor = target.GetPixel(w, h); // 0 ~ 1로 정규화 되어 있음.
                     ColorHSV targetColorHsv = ColorHSV.rgb2hsv(targetColor);
 
-                    foreach (var color in colors)
+                    foreach (var cRange in colors)
                     {
+                        if (cRange.Count != 2)
+                        {
+                            Debug.LogError("Color Range need only 2 colors");
+                            break;
+                        }
+
                         //TODO: 픽셀 hsv범위 셋팅 후 멀티스레드 작성
+
                     }
                 }
             }
