@@ -1,5 +1,6 @@
 using System;
-using System.Drawing;
+
+using UnityEngine;
 
 namespace CV
 {
@@ -18,9 +19,9 @@ namespace CV
 
         public static ColorHSV rgb2hsv(Color target)
         {
-            float r = target.R / 255;
-            float g = target.G / 255;
-            float b = target.B / 255;
+            float r = target.r / 255;
+            float g = target.g / 255;
+            float b = target.b / 255;
 
             float max = Math.Max(r, Math.Max(g, b));
             float min = Math.Min(r, Math.Min(g, b));
