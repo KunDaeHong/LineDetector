@@ -236,5 +236,42 @@ namespace CV
         {
             return ((x >= 0 && x < maxRowCol.x) && (y >= 0 && y < maxRowCol.y));
         }
+
+        /// <summary>
+        /// 허프변환을 위한 행렬곱셉 함수(Matrix Multiply for Hough Transform)
+        /// </summary>
+        /// <param name="first">첫번째 행렬(First Matrix)</param>
+        /// <param name="second">두번째 행렬(Second Matrix)</param>
+        /// <returns>List<list type="List<double>"></returns>
+        public static double[,] matMul(List<List<double>> first, List<List<double>> second)
+        {
+            int fRowCnt = first.Count;
+            int fColCnt = first[0].Count;
+
+            int sRowCnt = second.Count;
+            int sColCnt = second[0].Count;
+
+            //a x b 와 c x d 일시 b 와 c는 갯수가 같아야 함.
+            if (fColCnt != sRowCnt)
+            {
+                Debug.LogError("Check the matrix. A and B matrix counts are different.");
+                throw new Exception("Check the matrix. A and B matrix counts are different.");
+            }
+
+            double[,] output = new double[fColCnt, sColCnt]; //행렬의 갯수는 a x b 와 c x d 일시 a x d의 형태가 됨.
+
+            for (int i = 0; i < fRowCnt; i++)
+            {
+                for (int j = 0; j < sColCnt; j++)
+                {
+                    for (int k = 0; k < fColCnt; k++)
+                    {
+                        output[i, j] += first[i][k] * second[k][j];
+                    }
+                }
+            }
+
+            return output;
+        }
     }
 }

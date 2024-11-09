@@ -23,7 +23,7 @@ namespace CV
             {
                 float[,] output = new float[grayScaleFloat.GetLength(0), grayScaleFloat.GetLength(1)];
                 Vector2 maxRowCol = new Vector2(grayScaleFloat.GetLength(0) - 1, grayScaleFloat.GetLength(1) - 1);
-                Debug.Log("BilateralFilter Start");
+                //Debug.Log("BilateralFilter Start");
 
                 for (int y = 0; y < maxRowCol.y; y++)
                 {
@@ -37,7 +37,7 @@ namespace CV
                     return tasker.threadCnt == 0;
                 });
 
-                Debug.Log("BilateralFilter END");
+                //Debug.Log("BilateralFilter END");
 
                 return output;
             }
@@ -56,7 +56,7 @@ namespace CV
             {
                 float avg = await bilateralWorker(maxRowCol, grayScaleFloat, kernelSize, x, yIdx, spaceWeight, colorWeight);
                 output[x, yIdx] = avg;
-                Console.WriteLine($"bilateralFilter x: {x} y: {yIdx} avg: {avg}");
+                //Console.WriteLine($"bilateralFilter x: {x} y: {yIdx} avg: {avg}");
             }
             return true;
         }
