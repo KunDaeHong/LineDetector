@@ -243,7 +243,7 @@ namespace CV
         /// <param name="first">첫번째 행렬(First Matrix)</param>
         /// <param name="second">두번째 행렬(Second Matrix)</param>
         /// <returns>List<list type="List<double>"></returns>
-        public static double[,] matMul(List<List<double>> first, List<List<double>> second)
+        public static double[,] matMul(List<List<object>> first, List<List<object>> second)
         {
             int fRowCnt = first.Count;
             int fColCnt = first[0].Count;
@@ -266,12 +266,29 @@ namespace CV
                 {
                     for (int k = 0; k < fColCnt; k++)
                     {
-                        output[i, j] += first[i][k] * second[k][j];
+                        output[i, j] += (double)first[i][k] * (double)second[k][j];
                     }
                 }
             }
 
             return output;
+        }
+
+        public static double[] flat2DMatrix(double[,] target)
+        {
+            int cnt = 0;
+            double[] flatArray = new double[target.GetLength(0) * target.GetLength(1)];
+
+            for (int i = 0; i < target.GetLength(0); i++)
+            {
+                for (int j = 0; j < target.GetLength(1); j++)
+                {
+                    flatArray[0] = target[i, j];
+                    cnt++;
+                }
+            }
+
+            return flatArray;
         }
     }
 }
