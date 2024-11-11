@@ -33,7 +33,15 @@ public class Hough : MonoBehaviour
         inputTexture.LoadImage(imgData);
         inputTexture.Apply();
 
-        float[,] output = await HoughTransform.houghTransformDetector(inputTexture, 50, 150);
+        float[,] output = await HoughTransform.houghTransformDetector(inputTexture, 50, 150, 180, 180, 1);
+
+        // for(int x = 0; x < output.GetLength(0); x++)
+        // {
+        //     for(int y = 0; y < output.GetLength(1); y++)
+        //     {
+        //         Console.WriteLine($"hough Result x: ${}");
+        //     }
+        // }
 
         // output.Apply();
         // byte[] outputImage = output.EncodeToPNG();

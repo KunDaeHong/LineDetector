@@ -243,13 +243,13 @@ namespace CV
         /// <param name="first">첫번째 행렬(First Matrix)</param>
         /// <param name="second">두번째 행렬(Second Matrix)</param>
         /// <returns>List<list type="List<double>"></returns>
-        public static double[,] matMul(List<List<object>> first, List<List<object>> second)
+        public static float[,] matMul(List<List<float>> first, List<List<float>> second)
         {
-            int fRowCnt = first.Count;
-            int fColCnt = first[0].Count;
+            int fRowCnt = first.Count; //f행
+            int fColCnt = first[0].Count; //f열
 
-            int sRowCnt = second.Count;
-            int sColCnt = second[0].Count;
+            int sRowCnt = second.Count; //s행
+            int sColCnt = second[0].Count; //s열
 
             //a x b 와 c x d 일시 b 와 c는 갯수가 같아야 함.
             if (fColCnt != sRowCnt)
@@ -258,7 +258,7 @@ namespace CV
                 throw new Exception("Check the matrix. A and B matrix counts are different.");
             }
 
-            double[,] output = new double[fColCnt, sColCnt]; //행렬의 갯수는 a x b 와 c x d 일시 a x d의 형태가 됨.
+            float[,] output = new float[fRowCnt, sColCnt]; //행렬의 갯수는 a x b 와 c x d 일시 a x d의 형태가 됨.
 
             for (int i = 0; i < fRowCnt; i++)
             {
@@ -266,7 +266,9 @@ namespace CV
                 {
                     for (int k = 0; k < fColCnt; k++)
                     {
-                        output[i, j] += (double)first[i][k] * (double)second[k][j];
+                        var f = first[i][k];
+                        var s = second[k][j];
+                        output[i, j] += f * s;
                     }
                 }
             }
@@ -274,7 +276,7 @@ namespace CV
             return output;
         }
 
-        public static double[] flat2DMatrix(double[,] target)
+        public static double[] flat2DMatrix(float[,] target)
         {
             int cnt = 0;
             double[] flatArray = new double[target.GetLength(0) * target.GetLength(1)];
