@@ -215,9 +215,10 @@ namespace CV
             {
                 for (int y = 0; y < target.GetLength(1); y++)
                 {
-                    float newColor = target[x, y] / 255;
-
-                    if (newColor > 0) edgePoints.Add(new List<int>() { x, y });
+                    if (target[x, y] > 0)
+                    {
+                        edgePoints.Add(new List<int>() { x, y });
+                    }
                 }
             }
 
