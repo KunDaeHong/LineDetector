@@ -236,5 +236,131 @@ namespace CV
         {
             return ((x >= 0 && x < maxRowCol.x) && (y >= 0 && y < maxRowCol.y));
         }
+
+        /// <summary>
+        /// 허프변환을 위한 행렬곱셉 함수(Matrix Multiply for Hough Transform)
+        /// </summary>
+        /// <param name="first">첫번째 행렬(First Matrix)</param>
+        /// <param name="second">두번째 행렬(Second Matrix)</param>
+        /// <returns>List<list type="List<double>"></returns>
+        public static double[,] matMul(List<List<float>> first, List<List<double>> second)
+        {
+            int fRowCnt = first.Count; //f행
+            int fColCnt = first[0].Count; //f열
+
+            int sRowCnt = second.Count; //s행
+            int sColCnt = second[0].Count; //s열
+
+            //a x b 와 c x d 일시 b 와 c는 갯수가 같아야 함.
+            if (fColCnt != sRowCnt)
+            {
+                Debug.LogError("Check the matrix. A and B matrix counts are different.");
+                throw new Exception("Check the matrix. A and B matrix counts are different.");
+            }
+
+            double[,] output = new double[fRowCnt, sColCnt]; //행렬의 갯수는 a x b 와 c x d 일시 a x d의 형태가 됨.
+
+            for (int i = 0; i < fRowCnt; i++)
+            {
+                for (int j = 0; j < sColCnt; j++)
+                {
+                    for (int k = 0; k < fColCnt; k++)
+                    {
+                        var f = first[i][k];
+                        var s = second[k][j];
+                        output[i, j] += f * s;
+                    }
+                }
+            }
+
+            return output;
+        }
+
+        public static double[] flat2DMatrix(double[,] target)
+        {
+            int cnt = 0;
+            double[] flatArray = new double[target.GetLength(0) * target.GetLength(1)];
+
+            for (int i = 0; i < target.GetLength(0); i++)
+            {
+                for (int j = 0; j < target.GetLength(1); j++)
+                {
+                    flatArray[cnt] = target[i, j];
+                    cnt++;
+                }
+            }
+
+            return flatArray;
+        }
+
+        public static T[,] matrixTranspose<T>(T[,] matrix)
+        {
+            int rows = matrix.GetLength(0);
+            int cols = matrix.GetLength(1);
+            T[,] transposed = new T[cols, rows];
+
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    transposed[j, i] = matrix[i, j];
+                }
+            }
+
+            return transposed;
+
+        }
+
+        //MARK: Draw Utils
+
+        //bresenham algorithm 참고: https://lalyns.tistory.com/entry/%EC%A0%95%EC%88%98%EB%A7%8C-%EC%82%AC%EC%9A%A9%ED%95%B4-%EC%84%A0-%EB%B9%A0%EB%A5%B4%EA%B2%8C-%EA%B7%B8%EB%A6%AC%EA%B8%B0
+        public static List<Vector2> getLineCoordinates(Vector2 startPoint, Vector2 endPoint)
+        {
+            List<Vector2> points = new List<Vector2>();
+
+            try
+            {
+                int x1 = (int)startPoint.x;
+                int y1 = (int)startPoint.y;
+                int x2 = (int)endPoint.x;
+                int y2 = (int)endPoint.y;
+
+                int dx = Math.Abs(x2 - x1);
+                int dy = Math.Abs(y2 - y1);
+
+                int sx = x1 < x2 ? 1 : -1; // x 방향으로 이동할 때 증가(1) 또는 감소(-1)
+                int sy = y1 < y2 ? 1 : -1; // y 방향으로 이동할 때 증가(1) 또는 감소(-1)
+                int err = dx - dy; // 오차값 초기화
+
+                while (true)
+                {
+                    points.Add(new Vector2(x1, y1)); // 현재 점을 리스트에 추가
+
+                    if (x1 == x2 && y1 == y2) // 끝 점에 도달하면 종료
+                        break;
+
+                    int e2 = err * 2; // 오차값을 두 배로 늘려서 계산
+
+                    if (e2 > -dy) // x 방향으로 이동이 우선
+                    {
+                        err -= dy;
+                        x1 += sx;
+                    }
+
+                    if (e2 < dx) // y 방향으로 이동
+                    {
+                        err += dx;
+                        y1 += sy;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine("Line Changer Error: " + ex.Message);
+                throw;
+            }
+
+            return points;
+        }
     }
 }

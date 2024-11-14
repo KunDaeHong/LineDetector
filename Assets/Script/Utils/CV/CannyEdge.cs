@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using UnityEngine;
@@ -204,6 +205,24 @@ namespace CV
 
             float[,] output = await bilateralFilter.bilateralFilter(convolutionList, 7, 75, 100);
             return output;
+        }
+
+        public static List<List<int>> getEdgePoints(float[,] target)
+        {
+            List<List<int>> edgePoints = new List<List<int>>();
+
+            for (int x = 0; x < target.GetLength(0); x++)
+            {
+                for (int y = 0; y < target.GetLength(1); y++)
+                {
+                    if (target[x, y] > 0)
+                    {
+                        edgePoints.Add(new List<int>() { x, y });
+                    }
+                }
+            }
+
+            return edgePoints;
         }
 
     }
