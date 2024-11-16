@@ -72,7 +72,6 @@ namespace CV
                 {
                     //실제 카운트 숫자와 idx 숫자가 일치하지 않음. idx넘버는 고정이라 변동되는 숫자로 넣어야 함.
                     workerThread = new Thread(async () => await Worker(startFunc));
-                    threadCnt++;
                 }
             }
 
@@ -90,19 +89,9 @@ namespace CV
 
             if (workerThread != null)
             {
+                threadCnt++;
                 Run(workerThread);
-
             }
-
-            Console.WriteLine($"현재 스레드 갯수 증가 {threadCnt}");
-
-            // await WaitUntil(() =>
-            // {
-            //     lock (lockObj)
-            //     {
-            //         return threadPoolList.Count == 0;
-            //     }
-            // });
         }
 
         private async Task Worker<T>(Func<Task<T>> startFunc)
@@ -129,7 +118,6 @@ namespace CV
                 lock (lockObj)
                 {
                     threadCnt--;
-                    Console.WriteLine($"현재 스레드 갯수 감소 {threadCnt}");
                 }
             }
         }
@@ -183,7 +171,7 @@ namespace CV
 
     public struct TaskUtilsConst
     {
-        public static int Task_Cnt = 1900;
+        public static int Task_Cnt = 40;
     }
 
     public struct ThreadUtilsConst

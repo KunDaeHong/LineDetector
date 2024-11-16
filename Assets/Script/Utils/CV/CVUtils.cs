@@ -1,11 +1,18 @@
 using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace CV
 {
     public class CVUtils
     {
+        private static MultiThreadUtils tasker = new MultiThreadUtils();
+        public CVUtils()
+        {
+            tasker.listen = resListen;
+        }
 
         //MARK: FOR Texture2D Utils
         public static Texture2D resizeTexture2D(Texture2D target, int width, int height)
@@ -129,6 +136,47 @@ namespace CV
             }
 
             return target;
+        }
+
+        public static async Task hsvColorFilter(Texture2D target, List<ColorHSV> hsvList)
+        {
+            //TODO: Should be create hsv specific filter
+            int width = target.width;
+            int height = target.height;
+            Texture2D output = new Texture2D(width, height);
+            //1: widthCnt 2: heightCnt 3: hsvColor
+            float[,,] hsvColorTarget = new float[width, height, 3];
+
+            //rgb texture2d 2 hsv2d
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    Color targetColor = target.GetPixel(x, y);
+                    await tasker.SpawnAsync(() => hsvColorFilterSubTask(targetColor, x, y, hsvColorTarget));
+                }
+            }
+
+            Console.WriteLine("Hsv 컬러로 변환 완료");
+
+            //hue 360, sat 0 ~ 100, val 0 ~ 100
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                }
+            }
+        }
+
+        private static async Task<bool> hsvColorFilterSubTask(Color rgb, int xIdx, int yIdx, float[,,] output)
+        {
+            ColorHSV hsvResult = ColorHSV.rgb2hsv(rgb);
+            output[xIdx, yIdx, 0] = hsvResult.hue;
+            output[xIdx, yIdx, 1] = hsvResult.saturation;
+            output[xIdx, yIdx, 2] = hsvResult.value;
+
+            await Task.Delay(0);
+            return true;
         }
 
 
@@ -311,6 +359,18 @@ namespace CV
 
         }
 
+        private static List<float> arange(float start, float finish, float increase)
+        {
+            List<float> arange = new List<float>();
+
+            for (float i = start; i < finish; i += increase)
+            {
+                arange.Add(i);
+            }
+
+            return arange;
+        }
+
         //MARK: Draw Utils
 
         //bresenham algorithm 참고: https://lalyns.tistory.com/entry/%EC%A0%95%EC%88%98%EB%A7%8C-%EC%82%AC%EC%9A%A9%ED%95%B4-%EC%84%A0-%EB%B9%A0%EB%A5%B4%EA%B2%8C-%EA%B7%B8%EB%A6%AC%EA%B8%B0
@@ -361,6 +421,13 @@ namespace CV
             }
 
             return points;
+        }
+
+        //MARK: Task
+        private async Task resListen(object res)
+        {
+            await Task.Delay(0);
+            return;
         }
     }
 }
