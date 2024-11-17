@@ -3,16 +3,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 
 using UnityEngine;
+using System.Linq;
 
 namespace CV
 {
     public class CVUtils
     {
         private static MultiThreadUtils tasker = new MultiThreadUtils();
-        public CVUtils()
-        {
-            tasker.listen = resListen;
-        }
 
         //MARK: FOR Texture2D Utils
         public static Texture2D resizeTexture2D(Texture2D target, int width, int height)
@@ -138,24 +135,46 @@ namespace CV
             return target;
         }
 
-        public static async Task hsvColorFilter(Texture2D target, List<ColorHSV> hsvList)
+        public static async Task<Texture2D> hsvColorFilter(Texture2D target, List<List<ColorHSV>> hsvList)
         {
-            //TODO: Should be create hsv specific filter
+            int batchSize = 40;
+            tasker.listen = resListen;
+
             int width = target.width;
             int height = target.height;
             Texture2D output = new Texture2D(width, height);
-            //1: widthCnt 2: heightCnt 3: hsvColor
+            //1: widthCnt 2: heightCnt 3: hsvColor 3D array
             float[,,] hsvColorTarget = new float[width, height, 3];
+            Color[] colorPixels = target.GetPixels();
 
             //rgb texture2d 2 hsv2d
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x < width; x += batchSize)
             {
-                for (int y = 0; y < height; y++)
+                for (int y = 0; y < height; y += batchSize)
                 {
-                    Color targetColor = target.GetPixel(x, y);
-                    await tasker.SpawnAsync(() => hsvColorFilterSubTask(targetColor, x, y, hsvColorTarget));
+                    int endX = Math.Min(x + batchSize, width);
+                    int endY = Math.Min(y + batchSize, height);
+
+                    await tasker.SpawnAsync(async () =>
+                    {
+                        for (int startX = x; x < endX; x++)
+                        {
+                            for (int startY = y; y < endY; y++)
+                            {
+                                Console.WriteLine($"hsv filtering x: {x} y: {y}");
+                                await hsvColorFilterSubTask(colorPixels[startY * width + x], x, y, hsvColorTarget);
+                            }
+                        }
+
+                        return true;
+                    });
                 }
             }
+
+            await tasker.WaitUntil(() =>
+            {
+                return tasker.threadCnt == 0;
+            });
 
             Console.WriteLine("Hsv 컬러로 변환 완료");
 
@@ -164,8 +183,24 @@ namespace CV
             {
                 for (int y = 0; y < height; y++)
                 {
+                    bool isContain = false;
+                    float hue = hsvColorTarget[x, y, 0];
+                    float sat = hsvColorTarget[x, y, 1];
+                    float val = hsvColorTarget[x, y, 2];
+                    ColorHSV pixelHsv = new ColorHSV(hue, sat, val);
+
+                    foreach (var hsvS in hsvList)
+                    {
+                        if (hsvS.First() < pixelHsv && pixelHsv < hsvS.Last()) isContain = true;
+                    }
+
+                    if (isContain) output.SetPixel(x, y, target.GetPixel(x, y));
                 }
             }
+
+            output.Apply();
+
+            return output;
         }
 
         private static async Task<bool> hsvColorFilterSubTask(Color rgb, int xIdx, int yIdx, float[,,] output)
@@ -424,7 +459,7 @@ namespace CV
         }
 
         //MARK: Task
-        private async Task resListen(object res)
+        private static async Task resListen(object res)
         {
             await Task.Delay(0);
             return;

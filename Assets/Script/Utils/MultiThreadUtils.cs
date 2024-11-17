@@ -75,22 +75,35 @@ namespace CV
                 }
             }
 
-            await WaitUntil(() =>
+            if (threadCnt < TaskUtilsConst.Task_Cnt)
             {
-                lock (lockObj)
+                if (workerThread != null)
                 {
-                    if (threadCnt > TaskUtilsConst.Task_Cnt)
-                    {
-                        Console.WriteLine("기다리는 거야");
-                    }
-                    return threadCnt < TaskUtilsConst.Task_Cnt;
+                    threadCnt++;
+                    Run(workerThread);
+                    Console.WriteLine($"스레드 추가 {threadCnt}");
                 }
-            });
-
-            if (workerThread != null)
+            }
+            else
             {
-                threadCnt++;
-                Run(workerThread);
+                await WaitUntil(() =>
+                {
+                    lock (lockObj)
+                    {
+                        if (threadCnt > TaskUtilsConst.Task_Cnt)
+                        {
+                            Console.WriteLine("기다리는 거야");
+                        }
+                        return threadCnt < TaskUtilsConst.Task_Cnt;
+                    }
+                });
+
+                if (workerThread != null)
+                {
+                    threadCnt++;
+                    Run(workerThread);
+                    Console.WriteLine($"스레드 추가 {threadCnt}");
+                }
             }
         }
 
@@ -118,6 +131,7 @@ namespace CV
                 lock (lockObj)
                 {
                     threadCnt--;
+                    Console.WriteLine($"스레드 감소 {threadCnt}");
                 }
             }
         }

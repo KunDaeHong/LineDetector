@@ -17,6 +17,40 @@ namespace CV
             this.value = value;
         }
 
+        public static bool operator <(ColorHSV left, ColorHSV right)
+        {
+            if (left is null) return right is not null;
+            if (right is null) return false;
+
+            if (left.hue < right.hue &&
+                left.saturation < right.saturation &&
+                left.value > right.value)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public static bool operator >(ColorHSV left, ColorHSV right)
+        {
+            if (left is null) return false;
+            if (right is null) return true;
+
+            if (left.hue > right.hue &&
+                left.saturation > right.saturation &&
+                left.value < right.value)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public static ColorHSV rgb2hsv(Color target)
         {
             float r = target.r / 255;
