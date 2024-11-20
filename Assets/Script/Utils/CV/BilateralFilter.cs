@@ -7,6 +7,7 @@ namespace CV
 {
     public class BilateralFilter
     {
+        int batchSize = 1000;
         MultiThreadUtils tasker = new MultiThreadUtils();
         public BilateralFilter()
         {
@@ -23,13 +24,31 @@ namespace CV
             {
                 float[,] output = new float[grayScaleFloat.GetLength(0), grayScaleFloat.GetLength(1)];
                 Vector2 maxRowCol = new Vector2(grayScaleFloat.GetLength(0) - 1, grayScaleFloat.GetLength(1) - 1);
-                //Debug.Log("BilateralFilter Start");
 
-                for (int y = 0; y < maxRowCol.y; y++)
+                for (int y = 0; y < maxRowCol.y; y += batchSize)
                 {
-                    //await UniTask.RunOnThreadPool(() => bilateralFilterSubTask(grayScaleFloat, kernelSize, spaceWeight, colorWeight, y));
-                    await tasker.SpawnAsync(() => bilateralFilterSubTask(grayScaleFloat, output, kernelSize, spaceWeight, colorWeight, y));
-                    //Console.WriteLine($"bilateralFilter x coords are finished but y coord is {y}");
+                    for (int x = 0; x < maxRowCol.x; x += batchSize)
+                    {
+                        //batch사이즈는 1000개까지 가능
+                        int endX = Math.Min(x + batchSize, (int)maxRowCol.x);
+                        int endY = Math.Min(y + batchSize, (int)maxRowCol.y);
+
+                        await tasker.SpawnAsync(async () =>
+                        {
+                            int initX = x;
+                            int initY = y;
+
+                            for (int startY = initY; startY < endY; startY++)
+                            {
+                                for (int startX = initX; startX < endX; startX++)
+                                {
+                                    await bilateralFilterSubTask(grayScaleFloat, output, kernelSize, spaceWeight, colorWeight, startX, startY);
+                                }
+                            }
+
+                            return true;
+                        });
+                    }
                 }
 
                 await tasker.WaitUntil(() =>
@@ -48,16 +67,11 @@ namespace CV
             }
         }
 
-        private async Task<bool> bilateralFilterSubTask(float[,] grayScaleFloat, float[,] output, int kernelSize, int spaceWeight, int colorWeight, int yIdx)
+        private async Task<bool> bilateralFilterSubTask(float[,] grayScaleFloat, float[,] output, int kernelSize, int spaceWeight, int colorWeight, int x, int y)
         {
             Vector2 maxRowCol = new Vector2(grayScaleFloat.GetLength(0) - 1, grayScaleFloat.GetLength(1) - 1);
-
-            for (int x = 0; x < grayScaleFloat.GetLength(0) - 1; x++)
-            {
-                float avg = await bilateralWorker(maxRowCol, grayScaleFloat, kernelSize, x, yIdx, spaceWeight, colorWeight);
-                output[x, yIdx] = avg;
-                //Console.WriteLine($"bilateralFilter x: {x} y: {yIdx} avg: {avg}");
-            }
+            float avg = await bilateralWorker(maxRowCol, grayScaleFloat, kernelSize, x, y, spaceWeight, colorWeight);
+            output[x, y] = avg;
             return true;
         }
 

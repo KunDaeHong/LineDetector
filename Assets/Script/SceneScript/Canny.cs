@@ -64,7 +64,7 @@ public class Canny : MonoBehaviour
 
         output.Apply();
         byte[] outputImage = output.EncodeToPNG();
-        string filePath = imgPath.Split(".")[0] + "-Converted" + ".png";
+        string filePath = imgPath.Split(".")[0] + "Canny-Converted" + ".png";
         await File.WriteAllBytesAsync(filePath, outputImage);
         Debug.Log("이미지 저장 완료: " + filePath);
 

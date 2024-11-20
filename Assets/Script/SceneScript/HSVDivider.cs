@@ -41,7 +41,6 @@ public class HSVDivide : MonoBehaviour
         List<List<ColorHSV>> hsvList = new List<List<ColorHSV>>()
         {
             new List<ColorHSV>() {LaneHSVRange.min_blueHSV, LaneHSVRange.max_blueHSV },
-            new List<ColorHSV>() {LaneHSVRange.min_whiteHSV, LaneHSVRange.max_whiteHSV },
             new List<ColorHSV>() {LaneHSVRange.min_yellowHSV, LaneHSVRange.max_yellowHSV }
         };
 

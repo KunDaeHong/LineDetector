@@ -24,7 +24,7 @@ namespace CV
 
             if (left.hue < right.hue &&
                 left.saturation < right.saturation &&
-                left.value > right.value)
+                left.value < right.value)
             {
                 return true;
             }
@@ -41,7 +41,7 @@ namespace CV
 
             if (left.hue > right.hue &&
                 left.saturation > right.saturation &&
-                left.value < right.value)
+                left.value > right.value)
             {
                 return true;
             }
@@ -67,12 +67,15 @@ namespace CV
 
             if (delta != 0)
             {
-                if (r == max) h = 60 * (((g - b) / delta) % 6);
+                if (r == max) h = 60 * ((g - b) / delta % 6);
                 if (g == max) h = 60 * (2 + ((b - r) / delta));
                 if (b == max) h = 60 * (4 + ((r - g) / delta));
             }
 
             if (h < 0) h += 360;
+
+            s *= 100;
+            v *= 100;
 
             return new ColorHSV(h, s, v);
         }

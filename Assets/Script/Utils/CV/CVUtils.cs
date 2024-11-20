@@ -137,32 +137,35 @@ namespace CV
 
         public static async Task<Texture2D> hsvColorFilter(Texture2D target, List<List<ColorHSV>> hsvList)
         {
-            int batchSize = 40;
+            int batchSize = 1000;
             tasker.listen = resListen;
 
             int width = target.width;
             int height = target.height;
             Texture2D output = new Texture2D(width, height);
             //1: widthCnt 2: heightCnt 3: hsvColor 3D array
-            float[,,] hsvColorTarget = new float[width, height, 3];
             Color[] colorPixels = target.GetPixels();
+            float[,,] hsvColorTarget = new float[width, height, 3];
 
             //rgb texture2d 2 hsv2d
-            for (int x = 0; x < width; x += batchSize)
+            for (int y = 0; y < height; y += batchSize)
             {
-                for (int y = 0; y < height; y += batchSize)
+                for (int x = 0; x < width; x += batchSize)
                 {
                     int endX = Math.Min(x + batchSize, width);
                     int endY = Math.Min(y + batchSize, height);
 
                     await tasker.SpawnAsync(async () =>
                     {
-                        for (int startX = x; x < endX; x++)
+                        int initX = x;
+                        int initY = y;
+
+                        for (int startY = initY; startY < endY; startY++)
                         {
-                            for (int startY = y; y < endY; y++)
+                            for (int startX = initX; startX < endX; startX++)
                             {
-                                Console.WriteLine($"hsv filtering x: {x} y: {y}");
-                                await hsvColorFilterSubTask(colorPixels[startY * width + x], x, y, hsvColorTarget);
+                                //Console.WriteLine($"hsv filtering x: {startX} y: {startY}");
+                                await hsvColorFilterSubTask(colorPixels[startY * width + startX], startX, startY, hsvColorTarget);
                             }
                         }
 
@@ -177,24 +180,42 @@ namespace CV
             });
 
             Console.WriteLine("Hsv 컬러로 변환 완료");
+            List<List<int>> containedList = new List<List<int>>();
 
             //hue 360, sat 0 ~ 100, val 0 ~ 100
-            for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
             {
-                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
                 {
                     bool isContain = false;
                     float hue = hsvColorTarget[x, y, 0];
                     float sat = hsvColorTarget[x, y, 1];
                     float val = hsvColorTarget[x, y, 2];
                     ColorHSV pixelHsv = new ColorHSV(hue, sat, val);
+                    Color currentColor = colorPixels[y * width + x] * 255;
 
                     foreach (var hsvS in hsvList)
                     {
-                        if (hsvS.First() < pixelHsv && pixelHsv < hsvS.Last()) isContain = true;
+                        if (hsvS[0] < pixelHsv && pixelHsv < hsvS[1])
+                        {
+                            isContain = true;
+                        }
                     }
 
-                    if (isContain) output.SetPixel(x, y, target.GetPixel(x, y));
+                    //흰색 차선 전용
+                    if (currentColor.r > 160 && currentColor.g > 160 && currentColor.b > 160)
+                    {
+                        isContain = true;
+                    }
+
+                    if (isContain)
+                    {
+                        output.SetPixel(x, y, target.GetPixel(x, y));
+                    }
+                    else
+                    {
+                        output.SetPixel(x, y, Color.black);
+                    }
                 }
             }
 
@@ -205,6 +226,10 @@ namespace CV
 
         private static async Task<bool> hsvColorFilterSubTask(Color rgb, int xIdx, int yIdx, float[,,] output)
         {
+            rgb.r = rgb.r * 255;
+            rgb.g = rgb.g * 255;
+            rgb.b = rgb.b * 255;
+
             ColorHSV hsvResult = ColorHSV.rgb2hsv(rgb);
             output[xIdx, yIdx, 0] = hsvResult.hue;
             output[xIdx, yIdx, 1] = hsvResult.saturation;

@@ -185,7 +185,7 @@ namespace CV
 
     public struct TaskUtilsConst
     {
-        public static int Task_Cnt = 40;
+        public static int Task_Cnt = 1000;
     }
 
     public struct ThreadUtilsConst
