@@ -9,15 +9,15 @@ namespace CV
     static class CannyEdge
     {
         public static float[,] sobel_X_mask = new float[3, 3] {
-        {-1, 0, 1},
-        { -2, 0, 2},
-        { -1, 0, 1}
-    };
+            {-1, 0, 1},
+            { -2, 0, 2},
+            { -1, 0, 1}
+        };
         public static float[,] sobel_Y_mask = new float[3, 3]{
-        {1, 2, 1},
-        {0, 0, 0},
-        {-1, -2, -1}
-    };
+            {1, 2, 1},
+            {0, 0, 0},
+            {-1, -2, -1}
+        };
         public static async Task<float[,]> cannyEdgeDetector(Texture2D target, int lowThreshold, int highThreshold)
         {
             Texture2D targetGrayscale = CVUtils.toGrayScale(target);
@@ -57,6 +57,7 @@ namespace CV
         }
 
         //함수 설명 참고: https://velog.io/@mykirk98/Canny-Edge-Detection
+        //해당 Edge의 주변 이웃픽셀을 조사하여 넓게 나타나는 부분을 얇은 선으로 줄이는 함수.(NMS)
         public static float[,] nonMaximumSuppression(float[,] edge, float[,] grad)
         {
             int w = grad.GetLength(0);
