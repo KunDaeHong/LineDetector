@@ -34,7 +34,7 @@ public class GaussianBlur : MonoBehaviour
         inputTexture.LoadImage(imgData);
         inputTexture.Apply();
 
-        Texture2D output = CV.GaussianBlur.filtering(inputTexture);
+        Texture2D output = await CV.GaussianBlur.filtering(inputTexture);
         byte[] outputImage = output.EncodeToPNG();
         string filePath = imgPath.Split(".")[0] + "-GaussianBlur_Filter_Converted" + ".png";
         await File.WriteAllBytesAsync(filePath, outputImage);
