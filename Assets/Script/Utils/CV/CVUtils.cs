@@ -98,6 +98,27 @@ namespace CV
             return output;
         }
 
+        //work only rgba
+        public static float[,,] to3DArrayFromTexture2D(Texture2D target)
+        {
+            float[,,] output = new float[target.width, target.height, 4];
+
+            for (int w = 0; w < target.width; w++)
+            {
+                for (int h = 0; h < target.height; h++)
+                {
+                    //주의!: Unity Color는 모두 0~1로 정규화 되어 있음.
+                    Color color = target.GetPixel(w, h);
+                    output[w, h, 0] = color.r * 255;
+                    output[w, h, 1] = color.g * 255;
+                    output[w, h, 2] = color.b * 255;
+                    output[w, h, 3] = color.a * 255;
+                }
+            }
+
+            return output;
+        }
+
         //MARK: Filter Utils
 
         //For info : only for grayscale
