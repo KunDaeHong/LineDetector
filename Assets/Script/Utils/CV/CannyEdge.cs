@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace CV
 {
-    static class CannyEdge
+    public class CannyEdge
     {
         public static float[,] sobel_X_mask = new float[3, 3] {
         {-1, 0, 1},
