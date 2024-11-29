@@ -53,7 +53,7 @@ public class GaussianBlurEditorGUI : Editor
         bool activate = string.IsNullOrEmpty(gaussian.imgPath);
         using (new EditorGUI.DisabledScope(activate))
         {
-            if (GUILayout.Button("Convert to CannyEdge"))
+            if (GUILayout.Button("Convert to Gaussian Blur"))
             {
                 await gaussian.filtering();
             }
