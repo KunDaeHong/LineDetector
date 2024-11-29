@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 
 public class LinearRegression
 {
@@ -52,6 +52,7 @@ public class LinearRegression
             float err = dataFrame[cnt][1] - predict(w, b, dataFrame[cnt][0]);
             //Mean Squared Error 알고리즘 참고
             float cost = dataFrame.Sum(coord => (float)Math.Pow(coord[1] - predict(w, b, coord[0]), 2.0)) / dataFrame.Count;
+
             float grad_w = dataFrame.Sum(a => (w * a[1] - (w * a[0] + b)) * -2 * a[0]) / dataFrame.Count; // mse를 w에 대해 편미분
             float grad_b = dataFrame.Sum(a => (w * a[1] - (w * a[0] + b)) * -2) / dataFrame.Count; //mse를 b에 대해 편미분
 
