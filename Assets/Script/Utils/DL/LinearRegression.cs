@@ -12,7 +12,7 @@ public class LinearRegression
         float w = 0; //가중치
         float b = 0; //편향
         List<float> result_x = new List<float>();
-        gradDescent(w, b, dataFrame, (float)0.5);
+        gradDescent(w, b, dataFrame, learningRate);
 
         for (int cnt = 0; cnt < dataFrame.Count; cnt++)
         {
