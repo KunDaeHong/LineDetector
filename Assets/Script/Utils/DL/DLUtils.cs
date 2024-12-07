@@ -40,7 +40,9 @@ public class DLUtils
     //참고: https://www.youtube.com/watch?v=06EqCxjrmX0&t=381s
     //참고: https://velog.io/@amobmocmo/Python-%EB%8B%A8%EC%88%9C-%EC%84%A0%ED%98%95-%ED%9A%8C%EA%B7%80-Linear-Regression-%EA%B5%AC%ED%98%84-9ik2uej68q
     /// <summary>
-    /// 경사 하강법 함수
+    /// 경사 하강법 함수(현재 선형회귀만 사용하는지라 
+    /// 손실함수는 MSE밖에 못 만들었음ㅠ 추후 categorical_crossEntropy도 추가할거임(다중 분류를 위해...))
+    /// 취업하고 싶다...
     /// </summary>
     /// <param name="w">가중치</param>
     /// <param name="b">편향</param>
@@ -48,7 +50,7 @@ public class DLUtils
     /// <param name="learningRate">학습률</param>
     public static (float, float) gradDescent(float w, float b, List<List<int>> dataFrame, float learningRate, int epoch, float decay_rate = (float)0.9, string optimizer = "")
     {
-        if (optimizer != "" && optimizerList.Contains(optimizer))
+        if (optimizer != "" && !optimizerList.Contains(optimizer))
         {
             throw new Exception($"Optimizer {optimizer} is not exits in this project. \n Select only 1 optimizer from ADAM, RMSPROP, MOMENTUM.");
         }
@@ -69,7 +71,7 @@ public class DLUtils
             {
                 case "ADAM":
                     {
-                        adam(w, b, grad_w, grad_b, learningRate, decay_rate);
+                        (w, b) = adam(w, b, grad_w, grad_b, learningRate, decay_rate);
                         break;
                     }
                 case "RMSPROP":
@@ -123,7 +125,7 @@ public class DLUtils
     public static (float, float) momentum(float w, float b, float grad_w, float grad_b, float lr, float decay_rate = (float)0.9)
     {
         vDw = decay_rate * vDw + (1 - decay_rate) * grad_w;
-        vDb = decay_rate * vDw + (1 - decay_rate) * grad_b;
+        vDb = decay_rate * vDb + (1 - decay_rate) * grad_b;
 
         float w_updated = lr * vDw;
         float b_updated = lr * vDb;
@@ -142,7 +144,7 @@ public class DLUtils
     /// 기울기의 크기에 따라 학습률이 다르게 설정됨. (기울기가 클 경우 작은 학습률, 기울기가 작은 경우 큰 학습률)
     /// https://gaussian37.github.io/dl-dlai-RMSProp/
     /// </summary>
-    public static (float, float) rmsProp(float w, float b, float grad_w, float grad_b, float lr, float decay_rate = (float)0.9)
+    public static (float, float) rmsProp(float w, float b, float grad_w, float grad_b, float lr, float decay_rate = (float)0.9999)
     {
         sDw = decay_rate * sDw + (1 - decay_rate) * grad_w * grad_w;
         sDb = decay_rate * sDb + (1 - decay_rate) * grad_b * grad_b;
@@ -176,18 +178,18 @@ public class DLUtils
     public static (float, float) adam(float w, float b, float grad_w, float grad_b, float lr, float decay_rate = (float)0.9)
     {
         iter += 1;
-        float decay_rate_1 = (float)(decay_rate + 0.0999);
-        float decay_rate_2 = decay_rate;
+        float decay_rate_1 = decay_rate; //beta1
+        float decay_rate_2 = (float)(decay_rate + 0.0999); //beta2
 
         vDw = decay_rate * vDw + (1 - decay_rate_1) * grad_w;
         vDb = decay_rate * vDw + (1 - decay_rate_1) * grad_b;
         sDw = decay_rate * sDw + (1 - decay_rate_2) * grad_w * grad_w;
         sDb = decay_rate * sDb + (1 - decay_rate_2) * grad_b * grad_b;
 
-        float lr_t = (float)(lr * Math.Sqrt(1 - Math.Pow(decay_rate_2, 2) * iter) / (1 - Math.Pow(decay_rate_1, 2) * iter));
+        float lr_t = (float)(lr * Math.Sqrt(1 - Math.Pow(decay_rate_2, iter)) / (1 - Math.Pow(decay_rate_1, iter)));
 
-        float w_updated = (float)(w - lr_t * (vDw / Math.Sqrt(sDw) + 1e-7));
-        float b_updated = (float)(b - lr_t * (vDb / Math.Sqrt(sDb) + 1e-7));
+        float w_updated = (float)(w - lr_t * (vDw / (Math.Sqrt(sDw) + 1e-7)));
+        float b_updated = (float)(b - lr_t * (vDb / (Math.Sqrt(sDb) + 1e-7)));
 
         return (w_updated, b_updated);
     }

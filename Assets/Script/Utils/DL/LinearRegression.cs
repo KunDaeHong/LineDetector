@@ -35,7 +35,7 @@ public class LinearRegression
             new List<float>(){110},
         };
 
-        List<float> result = fitting(movie_audience, expect, 500000, (float)0.0001);
+        List<float> result = fitting(movie_audience, expect, 50000, (float)0.001, "ADAM");
 
         for (int x = 0; x < result.Count; x++)
         {
@@ -50,14 +50,14 @@ public class LinearRegression
     }
 
     //dataFrame[[x, y]]
-    public static List<float> fitting(List<List<int>> dataFrame, List<List<float>> expect, int epoch, float learningRate = 1)
+    public static List<float> fitting(List<List<int>> dataFrame, List<List<float>> expect, int epoch, float learningRate = 1, string optimizer = "")
     {
         //LMS(Least Mean Square ERR)
         //값을 미리 초기화
         float w = 0; //가중치
         float b = 0; //편향
         List<float> result_x = new List<float>();
-        (w, b) = DLUtils.gradDescent(w, b, dataFrame, learningRate, epoch, (float)0.9, "ADAM");
+        (w, b) = DLUtils.gradDescent(w, b, dataFrame, learningRate, epoch, (float)0.9, optimizer);
 
         for (int cnt = 0; cnt < dataFrame.Count; cnt++)
         {
