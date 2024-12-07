@@ -22,10 +22,9 @@ namespace CV
            new Color(160, 160, 160)
         };
 
-        public static void detectCarLane(Texture2D img)
+        public static void detectCarLane()
         {
-
-
+            LinearRegression.testLinearRegression();
         }
     }
 
