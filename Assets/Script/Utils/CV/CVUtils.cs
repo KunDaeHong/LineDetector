@@ -225,7 +225,7 @@ namespace CV
             return output;
         }
 
-        private static async Task<bool> hsvColorFilterSubTask(Color rgb, int xIdx, int yIdx, float[,,] output)
+        public static async Task<bool> hsvColorFilterSubTask(Color rgb, int xIdx, int yIdx, float[,,] output)
         {
             rgb.r = rgb.r * 255;
             rgb.g = rgb.g * 255;

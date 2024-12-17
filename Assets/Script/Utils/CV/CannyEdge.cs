@@ -73,6 +73,7 @@ namespace CV
                     var angle = grad[x, y] * 180 / Math.PI;
                     angle = angle < 0 ? angle + 180 : angle;
 
+                    //주변 반경 체인코드
                     if ((0 <= angle && angle < 22.5) || (157.5 <= angle && angle <= 180))
                     {
                         if (CVUtils.isBoundary(x, y - 1, new Vector2(w, h))) left = edge[x, y - 1];
