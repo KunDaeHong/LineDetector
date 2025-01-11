@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 using System.Linq;
+using Unity.VisualScripting;
 
 namespace CV
 {
@@ -98,8 +99,78 @@ namespace CV
             return output;
         }
 
-        //MARK: Filter Utils
+        //대비 조절
+        public static Texture2D clippingContrastFromTexture2D(Texture2D target, int contrastVal)
+        {
+            if (contrastVal < -100 || contrastVal > 100) throw new Exception("Contrast can be use -100 to 100. Default is 0.");
 
+            float contrastFactor = contrastVal < 0 ? (contrastVal + 100) / 100 : (contrastVal / 100) + 1;
+            Texture2D output = new Texture2D(target.width, target.height);
+
+            for (int w = 0; w < target.width; w++)
+            {
+                for (int h = 0; h < target.height; h++)
+                {
+                    //주의!: Unity Color는 모두 0~1로 정규화 되어 있음.
+                    //128를 쓰는 이유는 0 ~ 255 중 중간값 채택.
+                    Color color = target.GetPixel(w, h);
+                    int colorR = (int)(color.r * 255);
+                    int colorG = (int)(color.g * 255);
+                    int colorB = (int)(color.b * 255);
+
+                    int r = (int)(colorR + (colorR - 128) * contrastFactor);
+                    int g = (int)(colorG + (colorG - 128) * contrastFactor);
+                    int b = (int)(colorB + (colorB - 128) * contrastFactor);
+
+                    r = Math.Max(0, Math.Min(r, 255));
+                    g = Math.Max(0, Math.Min(g, 255));
+                    b = Math.Max(0, Math.Min(b, 255));
+
+                    output.SetPixel(w, h, new Color((float)r / 255, (float)g / 255, (float)b / 255));
+                }
+            }
+
+            output.Apply();
+
+            return output;
+        }
+
+        public static Texture2D clippingGammaFromTexture2D(Texture2D target, int gammaVal)
+        {
+            if (gammaVal < -100 || gammaVal > 100) throw new Exception("Gamma can be use -100 to 100. Default is 0.");
+
+            float gammaFactor = gammaVal < 0 ? (float)(gammaVal + 100) / 100 : (float)(gammaVal / 100) + 1;
+            Texture2D output = new Texture2D(target.width, target.height);
+
+            for (int w = 0; w < target.width; w++)
+            {
+                for (int h = 0; h < target.height; h++)
+                {
+                    //주의!: Unity Color는 모두 0~1로 정규화 되어 있음.
+                    //128를 쓰는 이유는 0 ~ 255 중 중간값 채택.
+                    Color color = target.GetPixel(w, h);
+                    int colorR = (int)(color.r * 255);
+                    int colorG = (int)(color.g * 255);
+                    int colorB = (int)(color.b * 255);
+
+                    int r = (int)(colorR * Math.Pow((float)colorR / 255, gammaFactor));
+                    int g = (int)(colorG * Math.Pow((float)colorG / 255, gammaFactor));
+                    int b = (int)(colorB * Math.Pow((float)colorB / 255, gammaFactor));
+
+                    r = Math.Max(0, Math.Min(r, 255));
+                    g = Math.Max(0, Math.Min(g, 255));
+                    b = Math.Max(0, Math.Min(b, 255));
+
+                    output.SetPixel(w, h, new Color((float)r / 255, (float)g / 255, (float)b / 255));
+                }
+            }
+
+            output.Apply();
+
+            return output;
+        }
+
+        //MARK: Filter Utils
 
         //For info : only for grayscale
         public static Texture2D gaussianFilter(Texture2D target, int size, float sigma)
@@ -188,6 +259,7 @@ namespace CV
             {
                 for (int x = 0; x < width; x++)
                 {
+#pragma warning disable CS0219 // 변수가 할당되었지만 해당 값이 사용되지 않았습니다.
                     bool isContain = false;
                     float hue = hsvColorTarget[x, y, 0];
                     float sat = hsvColorTarget[x, y, 1];
@@ -204,10 +276,10 @@ namespace CV
                     }
 
                     //흰색 차선 전용
-                    if (currentColor.r > 160 && currentColor.g > 160 && currentColor.b > 160)
-                    {
-                        isContain = true;
-                    }
+                    // if (currentColor.r > 150 && currentColor.g > 150 && currentColor.b > 150)
+                    // {
+                    //     isContain = true;
+                    // }
 
                     if (isContain)
                     {
