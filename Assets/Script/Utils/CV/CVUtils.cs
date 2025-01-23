@@ -118,9 +118,9 @@ namespace CV
                     int colorG = (int)(color.g * 255);
                     int colorB = (int)(color.b * 255);
 
-                    int r = (int)(colorR + (colorR - 128) * contrastFactor);
-                    int g = (int)(colorG + (colorG - 128) * contrastFactor);
-                    int b = (int)(colorB + (colorB - 128) * contrastFactor);
+                    int r = (int)(colorR + (colorR - 140) * contrastFactor);
+                    int g = (int)(colorG + (colorG - 140) * contrastFactor);
+                    int b = (int)(colorB + (colorB - 140) * contrastFactor);
 
                     r = Math.Max(0, Math.Min(r, 255));
                     g = Math.Max(0, Math.Min(g, 255));
@@ -259,8 +259,6 @@ namespace CV
             {
                 for (int x = 0; x < width; x++)
                 {
-#pragma warning disable CS0219 // 변수가 할당되었지만 해당 값이 사용되지 않았습니다.
-                    bool isContain = false;
                     float hue = hsvColorTarget[x, y, 0];
                     float sat = hsvColorTarget[x, y, 1];
                     float val = hsvColorTarget[x, y, 2];
@@ -271,7 +269,12 @@ namespace CV
                     {
                         if (hsvS[0] < pixelHsv && pixelHsv < hsvS[1])
                         {
-                            isContain = true;
+                            //isContain = true;
+                            output.SetPixel(x, y, target.GetPixel(x, y));
+                        }
+                        else
+                        {
+                            output.SetPixel(x, y, Color.black);
                         }
                     }
 
@@ -280,15 +283,6 @@ namespace CV
                     // {
                     //     isContain = true;
                     // }
-
-                    if (isContain)
-                    {
-                        output.SetPixel(x, y, target.GetPixel(x, y));
-                    }
-                    else
-                    {
-                        output.SetPixel(x, y, Color.black);
-                    }
                 }
             }
 

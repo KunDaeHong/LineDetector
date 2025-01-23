@@ -22,16 +22,15 @@ namespace CV
             if (left is null) return right is not null;
             if (right is null) return false;
 
-            if (left.hue < right.hue &&
-                left.saturation < right.saturation &&
-                left.value < right.value)
-            {
-                return true;
-            }
-            else
+            if (left.hue > right.hue)
             {
                 return false;
             }
+
+            float left_dist = (float)(Math.Pow(left.saturation, 2) + Math.Pow(left.value, 2));
+            float right_dist = (float)(Math.Pow(right.saturation, 2) + Math.Pow(right.value, 2));
+
+            return left_dist < right_dist;
         }
 
         public static bool operator >(ColorHSV left, ColorHSV right)
@@ -39,16 +38,15 @@ namespace CV
             if (left is null) return false;
             if (right is null) return true;
 
-            if (left.hue > right.hue &&
-                left.saturation > right.saturation &&
-                left.value > right.value)
-            {
-                return true;
-            }
-            else
+            if (left.hue < right.hue)
             {
                 return false;
             }
+
+            float left_dist = (float)(Math.Pow(left.saturation, 2) + Math.Pow(left.value, 2));
+            float right_dist = (float)(Math.Pow(right.saturation, 2) + Math.Pow(right.value, 2));
+
+            return left_dist > right_dist;
         }
 
         public static ColorHSV rgb2hsv(Color target)
@@ -81,3 +79,4 @@ namespace CV
         }
     }
 }
+

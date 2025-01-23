@@ -14,5 +14,9 @@ namespace CV
 
         public static ColorHSV min_whiteHSV = new ColorHSV(140, (float)3.0, (float)54.5);
         public static ColorHSV max_whiteHSV = new ColorHSV(192, (float)7.0, (float)76.1);
+
+        //GrayScale Only
+        public static ColorHSV min_whiteHSV_G = new ColorHSV(0, 0, (float)47.8);
+        public static ColorHSV max_whiteHSV_G = new ColorHSV(0, 0, (float)75.4);
     }
 }
