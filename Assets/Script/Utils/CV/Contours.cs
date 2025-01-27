@@ -1,9 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.VisualScripting;
+using System.Collections.Generic;
+
 using UnityEngine;
+using Unity.VisualScripting;
 
 namespace CV
 {
@@ -14,10 +15,11 @@ namespace CV
         //상하좌우 대각선 좌표 순서
         private static int[] dx = new int[8] { -1, 0, 1, 1, 1, 0, -1, -1 };
         private static int[] dy = new int[8] { 1, 1, 1, 0, -1, -1, -1, 0 };
+        private static int[] dAngle = new int[8] { 90, 45, 0, -45, -90, -135, 180, 135 };
 
         //컨투어 박스 인식 사이즈 (단위 px)
-        private static int lowest_box_width = 40;
-        private static int lowest_box_height = 10;
+        private static int lowest_box_width = 8;
+        private static int lowest_box_height = 8;
 
 
         //MARK: Canny Contours
@@ -26,6 +28,7 @@ namespace CV
             bool[,] visited_pixels = new bool[target.width + 1, target.height + 1];
             List<List<Vector2>> contour_pixels = new List<List<Vector2>>();
             float[,] outputTexture = await CannyEdge.cannyEdgeDetector(target, 50, 150);
+            Debug.Log("CannyEdge 엣지 라인 생성 완료");
 
             //yx 순 이여야 x축으로 이동하고 아래로 내려감.
             for (int y = 0; y < target.height; y++)
@@ -46,6 +49,7 @@ namespace CV
                 }
             }
 
+            Debug.Log("Contours 좌표 생성 완료");
             Texture2D output = drawContour(target, contour_pixels);
 
             return output;
@@ -57,7 +61,7 @@ namespace CV
             List<List<Vector2>> contour_pixels = new List<List<Vector2>>();
             float[,] outputTexture = await CannyEdge.cannyEdgeDetector(target, 50, 150);
 
-            //yx 순 이여야 x축으로 이동하고 아래로 내려감.
+            //yx 순 이여야 x축으로 이동하고 위로 올라감.
             for (int y = 0; y <= target.height; y++)
             {
                 for (int x = 0; x <= target.width; x++)
@@ -182,92 +186,175 @@ namespace CV
         {
             Texture2D output = target;
             List<List<Vector2>> contours_rect = new List<List<Vector2>>(); //추후 반환타입으로 지정 가능성
+            int[,] contourRectNum = new int[target.width, target.height]; // 해당 픽셀 방문, 해당 픽셀이 어느 컨투어에 포함되는지 기록
 
             Vector2 minPoint = new Vector2(-1, -1);
             Vector2 maxPoint = new Vector2(target.width + 1, target.height + 1);
 
-            for (int i = 0; i < contour_pixels.Count(); i++)
+            for (int i = 0; i < contour_pixels.Count() - 1; i++)
             {
-                for (int j = 0; j < contour_pixels[i].Count(); j++)
+                //contour pixel 리스트의 특징
+                ///1. Unity의 Texture2D의 특징으로써 왼쪽 아래가 0,0 입니다.
+                ///2. contour pixel 리스트는 왼쪽 아래에서 가로로 이동합니다.
+                ///3. 이걸 각 오브젝트마다 인식하도록 만들어야 합니다. (동시에 몇개의 오브젝트 생성 및 인식해야 하는 것임.)
+                ///4. 오브젝트는 사진에 몇개가 인식이 될진 모릅니다.
+
+                Vector2 p1 = contour_pixels[i].First();
+                Vector2 p2 = contour_pixels[i].Last();
+
+
+                output.SetPixel((int)p1.x, (int)p1.y, new Color(0, 1, 0));
+                output.SetPixel((int)p2.x, (int)p2.y, new Color(0, 1, 0));
+
+                //미할당 시
+                if (minPoint == new Vector2(-1, -1))
                 {
-                    Vector2 p1 = contour_pixels[i][j];
-                    Vector2 p2 = contour_pixels[i][(j + 1) % contour_pixels[i].Count];
-                    List<Vector2> points = CVUtils.getLineCoordinates(p1, p2);
+                    minPoint = contour_pixels[i].Aggregate((currentMin, v) =>
+                        (v.x < currentMin.x || (v.x == currentMin.x && v.y < currentMin.y)) ? v : currentMin);
+                }
 
-                    //미할당 시
-                    if (minPoint == new Vector2(-1, -1))
+                if (maxPoint == new Vector2(target.width + 1, target.height + 1))
+                {
+                    maxPoint = contour_pixels[i].Aggregate((currentMax, v) =>
+                        (v.x > currentMax.x || (v.x == currentMax.x && v.y > currentMax.y)) ? v : currentMax);
+                }
+
+                //가장 큰점과 작은점 비교
+                minPoint = Vector2.Min(minPoint, Vector2.Min(p1, p2));
+                maxPoint = Vector2.Max(maxPoint, Vector2.Max(p1, p2));
+
+                if (i == contour_pixels.Count - 1) continue;
+                Vector2 nextPoint = i + 1 == contour_pixels.Count - 2 ? maxPoint : contour_pixels[i + 1][0];
+
+                int arrange = 20;
+                bool findRect = false;
+                float dx = nextPoint.x - maxPoint.x;
+                float dy = nextPoint.y - maxPoint.y;
+                float dist = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                if (dist > arrange || contours_rect.Count() == 0)
+                {
+                    List<Vector2> nextPoints = contours_rect.Count() == 0 ? contour_pixels[i] : contour_pixels[i + 1];
+                    Vector2 nextMin = Vector2.Min(nextPoints.First(), nextPoints.Last());
+                    Vector2 nextMax = Vector2.Max(nextPoints.First(), nextPoints.Last());
+                    contours_rect.Add(new List<Vector2>() { nextMin, nextMax });
+
+                    Console.WriteLine($"추가되는 좌표 min x{nextMin.x} y{nextMin.y} max x{nextMax.x} y{nextMax.y}");
+
+                    for (int minY = (int)nextMin.y; minY <= (int)nextMax.y; minY++)
                     {
-                        minPoint = contour_pixels[i].Aggregate((currentMin, v) =>
-                            (v.x < currentMin.x || (v.x == currentMin.x && v.y < currentMin.y)) ? v : currentMin);
-                    }
-
-                    if (maxPoint == new Vector2(target.width + 1, target.height + 1))
-                    {
-                        maxPoint = contour_pixels[i].Aggregate((currentMax, v) =>
-                            (v.x > currentMax.x || (v.x == currentMax.x && v.y > currentMax.y)) ? v : currentMax);
-                    }
-
-                    //가장 큰점과 작은점 비교
-                    minPoint = Vector2.Min(minPoint, Vector2.Min(p1, p2));
-                    maxPoint = Vector2.Max(maxPoint, Vector2.Max(p1, p2));
-
-                    foreach (var point in points)
-                    {
-                        int x = (int)point.x;
-                        int y = (int)point.y;
-
-                        if (x >= 0 && x < target.width && y >= 0 && y < target.height)
+                        for (int minX = (int)nextMin.x; minX <= (int)nextMax.x; minX++)
                         {
-                            output.SetPixel(x, y, new Color(0, 1, 0));
+                            contourRectNum[minX, minY] = contours_rect.Count();
                         }
                     }
 
-                    if (i == contour_pixels.Count - 1) continue;
-                    Vector2 nextPoint = contour_pixels[Math.Clamp(i + 1, i, contour_pixels.Count())].Aggregate((currentMin, v) =>
-                    (v.x < currentMin.x || (v.x == currentMin.x && v.y < currentMin.y)) ? v : currentMin);
-                    float dist = (float)Math.Sqrt((double)(nextPoint.x - maxPoint.x) + (double)(nextPoint.y - maxPoint.y));
+                    minPoint = new Vector2(-1, -1);
+                    maxPoint = new Vector2(target.width + 1, target.height + 1);
+                    continue;
+                }
 
-                    if (dist > 5)
+                for (int dIdx = 0; dIdx < dAngle.Count(); dIdx++)
+                {
+                    if (findRect) break;
+
+                    float rad = deg2Rad(dAngle[dIdx]);
+                    Vector2 anglePoint = new Vector2((float)(arrange * Math.Cos(rad)), (float)(arrange * Math.Sin(rad)));
+                    Vector2 newMinPoint = minPoint + anglePoint;
+                    Vector2 newMaxPoint = maxPoint + anglePoint;
+
+                    List<Vector2> coords = CVUtils.getLineCoordinates(minPoint, newMinPoint);
+                    coords.AddRange(CVUtils.getLineCoordinates(maxPoint, newMaxPoint));
+
+                    foreach (Vector2 coord in coords)
                     {
-                        contours_rect.Add(new List<Vector2>() { minPoint, maxPoint });
+                        int x = Math.Clamp((int)coord.x, 0, contourRectNum.GetLength(0) - 1);
+                        int y = Math.Clamp((int)coord.y, 0, contourRectNum.GetLength(1) - 1);
 
-                        if (maxPoint.x - minPoint.x > lowest_box_width && maxPoint.y - minPoint.y > lowest_box_height)
+                        if (contourRectNum[x, y] != 0) //이전 방문 좌표 체크
                         {
-                            //위쪽 변(왼쪽에서 오른쪽으로)
-                            for (int x = (int)minPoint.x; x <= maxPoint.x; x++)
+                            //Vector2 Max는 각각 독립으로 비교하지만 픽셀이 같을 수 도 있음.
+                            if (x <= maxPoint.x && y <= maxPoint.y)
                             {
-                                output.SetPixel(x, (int)minPoint.y, new Color(0, 1, 0));
+                                contours_rect[contourRectNum[x, y] - 1][1] = maxPoint;
+                                int maxX = Math.Clamp((int)maxPoint.x, 0, contourRectNum.GetLength(0) - 1);
+                                int maxY = Math.Clamp((int)maxPoint.y, 0, contourRectNum.GetLength(1) - 1);
+                                contourRectNum[maxX, maxY] = contourRectNum[x, y];
+
+                                for (int minY = (int)minPoint.y; minY <= maxY; minY++)
+                                {
+                                    for (int minX = (int)minPoint.x; minX <= maxX; minX++)
+                                    {
+                                        contourRectNum[minX, minY] = contours_rect.Count();
+                                    }
+                                }
                             }
 
-                            //오른쪽 변(위쪽에서 아래로)
-                            for (int y = (int)minPoint.y; y <= maxPoint.y; y++)
-                            {
-                                output.SetPixel((int)maxPoint.x, y, new Color(0, 1, 0));
-                            }
+                            // if (minPoint != newMinPoint && newMinPoint.x <= minPoint.x && newMinPoint.y <= minPoint.y)
+                            // {
+                            //     contours_rect[contourRectNum[x, y] - 1][0] = minPoint;
+                            //     int maxX = Math.Clamp((int)minPoint.x, 0, contourRectNum.GetLength(0) - 1);
+                            //     int maxY = Math.Clamp((int)minPoint.y, 0, contourRectNum.GetLength(1) - 1);
+                            //     contourRectNum[maxX, maxY] = contourRectNum[x, y];
 
-                            //아래쪽 변(오른쪽에서 왼쪽으로)
-                            for (int x = (int)maxPoint.x; x >= minPoint.x; x--)
-                            {
-                                output.SetPixel(x, (int)maxPoint.y, new Color(0, 1, 0));
-                            }
+                            //     for (int minY = (int)minPoint.y; minY <= maxY; minY++)
+                            //     {
+                            //         for (int minX = (int)minPoint.x; minX <= maxX; minX++)
+                            //         {
+                            //             contourRectNum[minX, minY] = contours_rect.Count();
+                            //         }
+                            //     }
+                            // }
 
-                            //왼쪽 변(아래에서 위로)
-                            for (int y = (int)maxPoint.y; y >= minPoint.y; y--)
-                            {
-                                output.SetPixel((int)minPoint.x, y, new Color(0, 1, 0));
-                            }
-
+                            findRect = true;
+                            break;
                         }
-
-                        minPoint = new Vector2(-1, -1);
-                        maxPoint = new Vector2(target.width + 1, target.height + 1);
                     }
+                }
+
+                minPoint = new Vector2(-1, -1);
+                maxPoint = new Vector2(target.width + 1, target.height + 1);
+            }
+
+            foreach (var contours in contours_rect)
+            {
+                if (contours[1].x - contours[0].x > lowest_box_width && contours[1].y - contours[0].y > lowest_box_height)
+                {
+                    //위쪽 변(왼쪽에서 오른쪽으로)
+                    for (int x = (int)contours[0].x; x <= contours[1].x; x++)
+                    {
+                        output.SetPixel(x, (int)contours[0].y, new Color(0, 1, 0));
+                    }
+
+                    //오른쪽 변(위쪽에서 아래로)
+                    for (int y = (int)contours[0].y; y <= contours[1].y; y++)
+                    {
+                        output.SetPixel((int)contours[1].x, y, new Color(0, 1, 0));
+                    }
+
+                    //아래쪽 변(오른쪽에서 왼쪽으로)
+                    for (int x = (int)contours[1].x; x >= contours[0].x; x--)
+                    {
+                        output.SetPixel(x, (int)contours[1].y, new Color(0, 1, 0));
+                    }
+
+                    //왼쪽 변(아래에서 위로)
+                    for (int y = (int)contours[1].y; y >= contours[0].y; y--)
+                    {
+                        output.SetPixel((int)contours[0].x, y, new Color(0, 1, 0));
+                    }
+
                 }
             }
 
             output.Apply();
 
             return output;
+        }
+
+        private static float deg2Rad(float angle)
+        {
+            return (float)(Math.PI * angle / 180);
         }
 
         //MARK: Task
