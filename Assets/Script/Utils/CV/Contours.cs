@@ -18,8 +18,8 @@ namespace CV
         private static int[] dAngle = new int[8] { 90, 45, 0, -45, -90, -135, 180, 135 };
 
         //컨투어 박스 인식 사이즈 (단위 px)
-        private static int lowest_box_width = 8;
-        private static int lowest_box_height = 8;
+        private static int lowest_box_width = 15;
+        private static int lowest_box_height = 2;
 
 
         //MARK: Canny Contours
@@ -39,13 +39,9 @@ namespace CV
                     if (visited_pixels[x, y] || outputTexture[x, y] < 255) continue;
 
                     List<Vector2> contour_pixel = new List<Vector2>();
-                    nextChainCodeCanny(outputTexture, ref contour_pixel, x, y); // 새롭게 메모리 재할당 하지 않고 기존 변수 참조
-                    contour_pixels.Add(contour_pixel);
+                    testNextChainCodeCanny(outputTexture, ref contour_pixel, ref visited_pixels, x, y);
 
-                    contour_pixel.ForEach(i =>
-                    {
-                        visited_pixels[(int)i.x, (int)i.y] = true;
-                    });
+                    if (contour_pixel.Count() > 0) contour_pixels.Add(contour_pixel);
                 }
             }
 
@@ -134,6 +130,50 @@ namespace CV
             }
         }
 
+        private static void testNextChainCodeCanny(float[,] image, ref List<Vector2> contour_pixel, ref bool[,] visited_pixels, int x, int y)
+        {
+            int direction = 0;
+            Vector2 startP = new Vector2(x, y);
+
+            if (image[(int)startP.x, (int)startP.y] != 255)
+            {
+                return;
+            }
+
+            while (true)
+            {
+                if (!visited_pixels[(int)startP.x, (int)startP.y] && image[(int)startP.x, (int)startP.y] != 0)
+                {
+                    contour_pixel.Add(startP);
+                }
+
+                bool nextPixel = false;
+                visited_pixels[(int)startP.x, (int)startP.y] = true;
+
+                for (int dIdx = 0; dIdx < dx.Count(); dIdx++)
+                {
+                    int img_rows = image.GetLength(0);
+                    int img_cols = image.GetLength(1);
+                    int chainNum = (direction + dIdx) % 8;
+                    int nx = (int)startP.x + dx[chainNum]; // 조회 할 x 좌표
+                    int ny = (int)startP.y + dy[chainNum]; // 조회 할 y 좌표
+
+                    if (!CVUtils.isBoundary(nx, ny, new Vector2(img_rows, img_cols))) continue;
+                    if (visited_pixels[nx, ny]) continue;
+                    if (image[nx, ny] != 255) continue;
+
+                    nextPixel = true;
+                    startP = new Vector2(nx, ny);
+
+                    //서로의 마주보고 있는 방향을 반환. 만약 1부터 시작 시 ((chainNum + 4) % 8 ) + 1 이 되어야함.
+                    direction = (chainNum + 4) % 8;
+                    break;
+                }
+
+                if (!nextPixel || startP == new Vector2(x, y)) break;
+            }
+        }
+
         // MARK: HSV Contours
         public static async Task contoursDetectorByHsv(Texture2D target)
         {
@@ -200,11 +240,14 @@ namespace CV
                 ///4. 오브젝트는 사진에 몇개가 인식이 될진 모릅니다.
 
                 Vector2 p1 = contour_pixels[i].First();
-                Vector2 p2 = contour_pixels[i].Last();
+                Vector2 p2 = contour_pixels[i].First();
 
-
-                output.SetPixel((int)p1.x, (int)p1.y, new Color(0, 1, 0));
-                output.SetPixel((int)p2.x, (int)p2.y, new Color(0, 1, 0));
+                for (int j = 0; j < contour_pixels[i].Count(); j++)
+                {
+                    p1 = Vector2.Min(p1, contour_pixels[i][j]);
+                    p2 = Vector2.Max(p2, contour_pixels[i][j]);
+                    output.SetPixel((int)contour_pixels[i][j].x, (int)contour_pixels[i][j].y, new Color(0, 1, 0));
+                }
 
                 //미할당 시
                 if (minPoint == new Vector2(-1, -1))
@@ -224,13 +267,16 @@ namespace CV
                 maxPoint = Vector2.Max(maxPoint, Vector2.Max(p1, p2));
 
                 if (i == contour_pixels.Count - 1) continue;
-                Vector2 nextPoint = i + 1 == contour_pixels.Count - 2 ? maxPoint : contour_pixels[i + 1][0];
 
-                int arrange = 20;
+                int arrange = 15;
                 bool findRect = false;
+                Vector2 nextPoint = contour_pixels[i + 1].First(); //i + 1 == contour_pixels.Count - 2 ? maxPoint : 
+
                 float dx = nextPoint.x - maxPoint.x;
                 float dy = nextPoint.y - maxPoint.y;
                 float dist = (float)Math.Sqrt(dx * dx + dy * dy);
+
+                Console.WriteLine($"현재 좌표 x{maxPoint.x} y{maxPoint.y} 다음 좌표 x{nextPoint.x} y{nextPoint.y} 거리 {dist}");
 
                 if (dist > arrange || contours_rect.Count() == 0)
                 {
@@ -238,8 +284,6 @@ namespace CV
                     Vector2 nextMin = Vector2.Min(nextPoints.First(), nextPoints.Last());
                     Vector2 nextMax = Vector2.Max(nextPoints.First(), nextPoints.Last());
                     contours_rect.Add(new List<Vector2>() { nextMin, nextMax });
-
-                    Console.WriteLine($"추가되는 좌표 min x{nextMin.x} y{nextMin.y} max x{nextMax.x} y{nextMax.y}");
 
                     for (int minY = (int)nextMin.y; minY <= (int)nextMax.y; minY++)
                     {
@@ -289,22 +333,6 @@ namespace CV
                                     }
                                 }
                             }
-
-                            // if (minPoint != newMinPoint && newMinPoint.x <= minPoint.x && newMinPoint.y <= minPoint.y)
-                            // {
-                            //     contours_rect[contourRectNum[x, y] - 1][0] = minPoint;
-                            //     int maxX = Math.Clamp((int)minPoint.x, 0, contourRectNum.GetLength(0) - 1);
-                            //     int maxY = Math.Clamp((int)minPoint.y, 0, contourRectNum.GetLength(1) - 1);
-                            //     contourRectNum[maxX, maxY] = contourRectNum[x, y];
-
-                            //     for (int minY = (int)minPoint.y; minY <= maxY; minY++)
-                            //     {
-                            //         for (int minX = (int)minPoint.x; minX <= maxX; minX++)
-                            //         {
-                            //             contourRectNum[minX, minY] = contours_rect.Count();
-                            //         }
-                            //     }
-                            // }
 
                             findRect = true;
                             break;
@@ -356,6 +384,14 @@ namespace CV
         {
             return (float)(Math.PI * angle / 180);
         }
+
+        //TODO: 퀵소트 만들기;
+        /**
+        private static List<List<Vector2>> quickSort(List<List<Vector2>> contoursPixels)
+        {
+
+        }
+        **/
 
         //MARK: Task
         private static async Task resListen(object res)
