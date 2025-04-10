@@ -24,9 +24,9 @@ public class Node<T>
 
 public class NodeData
 {
-    public float f;
-    public float h;
-    public float g;
+    public float f; // h와 g를 합친 것
+    public float h; // 맨하탄 거리 기준 거리
+    public float g; // 유클리디안으로 대각선 기준 거리
 
     public NodeData(float f, float h, float g)
     {
@@ -80,23 +80,25 @@ public class Astar
         Node<NodeData> sNode = nodesArr[startNode];
         Node<NodeData> fNode = nodesArr[finishNode];
         PriorityQueue<Node<NodeData>> priorityQueue = new PriorityQueue<Node<NodeData>>();
-        priorityQueue.Enqueue(sNode, (int)Math.Ceiling(heuristic(sNode.pos, fNode.pos)));
+        priorityQueue.Enqueue(sNode, (int)Math.Ceiling(heuristic(sNode.pos, fNode.pos))); //시작노드를 우큐에 넣어줌.
 
         while (priorityQueue.count > 0)
         {
-            Node<NodeData> curNode = priorityQueue.Dequeue();
+            Node<NodeData> curNode = priorityQueue.Dequeue(); //분석할 노드를 우큐에 넣음
             if (closedList[curNode.idx]) continue;
 
-            closedList[curNode.idx] = true; //처음 시작점은 방문된 리스트로 저장
+            closedList[curNode.idx] = true; //분석해야 하는 노드는 바로 방문된 리스트로 저장
             Console.WriteLine($"{curNode.idx}번 정점 방문");
 
-            if (curNode.idx == finishNode) break;
+            if (curNode.idx == finishNode) break; //현재 노드가 만약 종점이라면 종료
 
+            //현재 노드에서 연결된 노드들을 기준으로 종점까지 거리를 계산
+            //계산된 노드중 종점까지 거리가 가장 짧은 노드를 선택
             foreach (int connectNodes in curNode.connectNodes)
             {
                 if (closedList[connectNodes]) continue; //방문된 경우 스킵
 
-                Node<NodeData> connectedNode = nodesArr[connectNodes]; //연결된 노드
+                Node<NodeData> connectedNode = nodesArr[connectNodes]; //현재노드와 연결된 노드
 
                 connectedNode.data.g = euclidean(connectedNode.pos, fNode.pos);
                 connectedNode.data.h = manhattan(connectedNode.pos, fNode.pos);
@@ -104,15 +106,15 @@ public class Astar
 
                 if (openList[connectNodes] < connectedNode.data.f) continue; //현재 예상 비용이 기록된 값보다 크다면 스킵
 
-                openList[connectNodes] = connectedNode.data.f;
-                priorityQueue.Enqueue(connectedNode, (int)Math.Ceiling(connectedNode.data.f));
+                openList[connectNodes] = connectedNode.data.f; //가장 값이 적은 노드를 열린 노드에 기록
+                priorityQueue.Enqueue(connectedNode, (int)Math.Ceiling(connectedNode.data.f)); //다음 턴에서 방문할 노드 저장
             }
         }
 
         Console.WriteLine($"{startNode} 부터 {finishNode}까지 최단거리 {Math.Round(openList[finishNode], 2)}");
     }
 
-    // heuristic f
+    // heuristic f h와 g을 합친것
     public static float heuristic(Vector2 a, Vector2 b)
     {
         return manhattan(a, b) + euclidean(a, b);
